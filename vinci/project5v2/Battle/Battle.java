@@ -25,11 +25,11 @@
 package vinci.project5v2.Battle;
 
 import java.io.IOException;
-import java.lang.reflect.Array;
-
+import java.util.LinkedList;
+import java.util.Queue;
+import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.swing.ImageIcon;
 import org.lwjgl.input.Mouse;
 import org.newdawn.slick.*;
 import org.newdawn.slick.state.*;
@@ -45,16 +45,18 @@ public class Battle extends BasicGameState {
     
     public Animation bossMoving, boss, miroMoving, miroBat, jacquesMoving, jacquesBat, sephiroth, sephirothMoving, queenBee, queenBeeMoving;
     public Image battleMap, bossImg, sephirothIMG, queenBeeImg, battleArrow;
-    private ImageIcon mp0, mp10, mp20, mp30, mp40, mp50, mp60, mp70, mp80, mp90, mp100;
-    private ImageIcon hp0, hp10, hp20, hp30, hp40, hp50, hp60, hp70, hp80, hp90, hp100;
+    private Image mp0, mp10, mp20, mp30, mp40, mp50, mp60, mp70, mp80, mp90, mp100;
+    private Image hp0, hp10, hp20, hp30, hp40, hp50, hp60, hp70, hp80, hp90, hp100;
     private final int[] duration = {300, 300, 300};
     private final int[] duration2 = {300, 600, 600};
     public Graphics g = new Graphics();
     private Audio battleSound;
     private int enemyID, bArrowX = 440, bArrowY = 523;
-    public ImageIcon[] hp = new ImageIcon[11];
-    public ImageIcon[] mp = new ImageIcon[11];
-
+    public Image[] hp = new Image[11];
+    public Image[] mp = new Image[11];
+    Queue<Integer> battleQueue;
+    public int turn, enemyHP = 100, enemypHP, damage, enemyBat, mHP = 50, jHP = 50;
+    
     public Battle(int state) {
     }
 
@@ -64,8 +66,13 @@ public class Battle extends BasicGameState {
     }
     @Override
     public void init(GameContainer gc, StateBasedGame sbg) throws SlickException {
+        battleQueue = new LinkedList<>();
+        
         enemyID = (int)(Math.random() * ((3) + 1));
-                
+        
+        initHP();
+        initMP();
+        
         if (enemyID == 0) {
             bossImg = new Image("/res/bahamut.png");
             Image[] bossMove = {new Image("/res/bahamut.png"), new Image("/res/bahamut2.png"), new Image("/res/bahamut3.png")};
@@ -94,10 +101,7 @@ public class Battle extends BasicGameState {
         miroBat = miroMoving;
         jacquesBat = jacquesMoving;
         
-//        for(int i = 0; i < 100; i = i + 10){
-//            hp[i] = new ImageIcon("/res/hp" + i + ".png");
-//            mp[i] = new ImageIcon("/res/mp" + i + ".png");
-//        }
+        
     }
     
     @Override
@@ -120,9 +124,12 @@ public class Battle extends BasicGameState {
     @Override
     public void render(GameContainer gc, StateBasedGame sbg, Graphics grphcs) throws SlickException {
         battleMap.draw(0, 0);
-        miroBat.draw(100, 300);
-        jacquesBat.draw(95, 225);
+        jacquesBat.draw(95, 300);
+        miroBat.draw(100, 225);
         battleArrow.draw(bArrowX, bArrowY);
+        
+        miroHP(mHP);
+        jacquesHP(jHP);
         
         if (enemyID == 0) {
             boss.draw(500, 200);
@@ -144,7 +151,7 @@ public class Battle extends BasicGameState {
         
         int xpos = Mouse.getX();
         int ypos = Mouse.getY();
-        System.out.println(xpos + "," + ypos);
+//        System.out.println(xpos + "," + ypos);
         
         miroBat = miroMoving;
         jacquesBat = jacquesMoving;
@@ -164,13 +171,32 @@ public class Battle extends BasicGameState {
         
         keyboardBattleInput(input);
         
+        initQueue();
+        turn = battleQueue.element();
+        
         if(input.isKeyPressed(Input.KEY_ESCAPE)) {
             System.exit(0);
         }
         
+        if (turn == 3) {
+            enemyAttack();
+            
+            System.out.println("  enemy hp: " + enemyHP + "\n");
+            System.out.println("   miro hp: " + mHP);
+            System.out.println("jacques hp: " + jHP + "\n");
+            
+            battleQueue.remove();
+            battleQueue.offer(turn);
+        }
+        
         if(input.isKeyPressed(Input.KEY_RETURN)) {
             if((bArrowX == 440) && (bArrowY == 523)) {
-                
+                if ((turn == 1) || (turn == 2)) {
+                    damage = 10;
+                    enemyHP = attack(enemyHP, damage, enemyID);
+                    battleQueue.remove();
+                    battleQueue.offer(turn);
+                }
             }
             if((bArrowX == 440) && (bArrowY == 580)) {
                 
@@ -185,6 +211,9 @@ public class Battle extends BasicGameState {
                 }
             }
         }
+        
+        miroHP(mHP);
+        jacquesHP(jHP);
     }
     
     public void keyboardBattleInput(Input input) {
@@ -227,5 +256,89 @@ public class Battle extends BasicGameState {
     
     public void mouseBattleInput(Input input) {
         
+    }
+    
+    public void initHP() throws SlickException {
+        hp[0] = hp0 = new Image("/res/hp0.png");
+        hp[1] = hp10 = new Image("/res/hp10.png");
+        hp[2] = hp20 = new Image("/res/hp20.png");
+        hp[3] = hp30 = new Image("/res/hp30.png");
+        hp[4] = hp40 = new Image("/res/hp40.png");
+        hp[5] = hp50 = new Image("/res/hp50.png");
+        hp[6] = hp60 = new Image("/res/hp60.png");
+        hp[7] = hp70 = new Image("/res/hp70.png");
+        hp[8] = hp80 = new Image("/res/hp80.png");
+        hp[9] = hp90 = new Image("/res/hp90.png");
+        hp[10] = hp100 = new Image("/res/hp100.png");
+    }
+    
+    public void initMP() throws SlickException {
+        mp[0] = mp0 = new Image("/res/mp0.png");
+        mp[1] = mp10 =  new Image("/res/mp10.png");
+        mp[2] = mp20 =  new Image("/res/mp20.png");
+        mp[3] = mp30 =  new Image("/res/mp30.png");
+        mp[4] = mp40 =  new Image("/res/mp40.png");
+        mp[5] = mp50 =  new Image("/res/mp50.png");
+        mp[6] = mp60 =  new Image("/res/mp60.png");
+        mp[7] = mp70 =  new Image("/res/mp70.png");
+        mp[8] = mp80 =  new Image("/res/mp80.png");
+        mp[9] = mp90 =  new Image("/res/mp90.png");
+        mp[10] = mp100 =  new Image("/res/mp100.png");
+    }
+    
+    public void miroHP(int mHP) {
+//        hp100.draw(140, 515);
+        int mh = (mHP / 5);
+        hp[mh].draw(140, 515);
+        mp100.draw(140, 530);
+    }
+    
+    public void jacquesHP(int jHP) {
+//        hp80.draw(140, 552);
+        int jh = (jHP / 5);
+        
+        hp[jh].draw(140, 552);
+        mp100.draw(140, 567);
+    }
+    
+    public void initQueue() {
+        battleQueue.offer(1);
+        battleQueue.offer(2);
+        battleQueue.offer(3);
+    }
+    
+    public int attack(int eHP, int damage, int enemyID) {
+        if (enemyID == 0) {
+            eHP -= 10;
+        }
+        if (enemyID == 1) {
+            eHP -= 10;
+        }
+        if (enemyID == 2) {
+            eHP -= 10;
+        }
+        
+        return eHP;
+    }
+    
+    public void enemyAttack() {
+        double yn = Math.random();
+        double enBat = Math.random();
+        if (yn < .7) {   
+            if(enBat > .5) {
+                mHP -= 10;
+                if (mHP < 0) {
+                    mHP = 0;
+                }
+            }
+            else
+                jHP -= 10;
+                if (jHP < 0) {
+                        jHP = 0;
+                    }
+        }
+        else {
+            System.out.println("MISSED!");
+        }
     }
 }
