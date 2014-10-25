@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.lwjgl.input.Mouse;
@@ -43,19 +44,20 @@ import vinci.project5v2.Game;
  */
 public class Battle extends BasicGameState {
     
-    public Animation bossMoving, boss, miroMoving, miroBat, jacquesMoving, jacquesBat, sephiroth, sephirothMoving, queenBee, queenBeeMoving;
-    public Image battleMap, bossImg, sephirothIMG, queenBeeImg, battleArrow;
+    public Animation bossMoving, boss, miroMoving, miroBat, jacquesMoving, jacquesBat, sephiroth, sephirothMoving, queenBee, queenBeeMoving, miroAttacking;
+    public Image battleMap, bossImg, sephirothIMG, queenBeeImg, battleArrow, miroAtk1, miroAtk2;
     private Image mp0, mp10, mp20, mp30, mp40, mp50, mp60, mp70, mp80, mp90, mp100;
     private Image hp0, hp10, hp20, hp30, hp40, hp50, hp60, hp70, hp80, hp90, hp100;
     private final int[] duration = {300, 300, 300};
     private final int[] duration2 = {300, 600, 600};
+    private final int[] durationBattle = {400, 400, 400};
     public Graphics g = new Graphics();
     private Audio battleSound;
     private int enemyID, bArrowX = 440, bArrowY = 523;
     public Image[] hp = new Image[11];
     public Image[] mp = new Image[11];
     Queue<Integer> battleQueue;
-    public int turn, enemyHP = 100, enemypHP, damage, enemyBat, mHP = 50, jHP = 50;
+    public int turn, enemyHP = 100, enemypHP, damage, enemyBat, mHP = 50, jHP = 50, miroX = 100;
     
     public Battle(int state) {
     }
@@ -96,8 +98,10 @@ public class Battle extends BasicGameState {
         battleArrow = new Image("/res/battleArrow.png");
         Image[] jacquesMove = {new Image("/res/jacques.png"), new Image("/res/jacques2.png"), new Image("/res/jacques3.png")};
         Image[] miroMove = {new Image("/res/battle1.png"), new Image("/res/battle2.png"), new Image("/res/battle1.png")};
+        Image[] miroAtk = {new Image("/res/mAttack1.png"), new Image("/res/mAttack2.png"), new Image("/res/mAttack1.png")};
         miroMoving = new Animation(miroMove, duration, true);
         jacquesMoving = new Animation(jacquesMove, duration, true);
+        miroAttacking = new Animation(miroAtk, durationBattle, true);
         miroBat = miroMoving;
         jacquesBat = jacquesMoving;
         
@@ -125,7 +129,7 @@ public class Battle extends BasicGameState {
     public void render(GameContainer gc, StateBasedGame sbg, Graphics grphcs) throws SlickException {
         battleMap.draw(0, 0);
         jacquesBat.draw(95, 300);
-        miroBat.draw(100, 225);
+        miroBat.draw(miroX, 225);
         battleArrow.draw(bArrowX, bArrowY);
         
         miroHP(mHP);
@@ -151,10 +155,6 @@ public class Battle extends BasicGameState {
         
         int xpos = Mouse.getX();
         int ypos = Mouse.getY();
-//        System.out.println(xpos + "," + ypos);
-        
-        miroBat = miroMoving;
-        jacquesBat = jacquesMoving;
         
         if (enemyID == 0) {
             boss = bossMoving;
@@ -181,21 +181,23 @@ public class Battle extends BasicGameState {
         if (turn == 3) {
             enemyAttack();
             
-            System.out.println("  enemy hp: " + enemyHP + "\n");
             System.out.println("   miro hp: " + mHP);
             System.out.println("jacques hp: " + jHP + "\n");
             
             battleQueue.remove();
             battleQueue.offer(turn);
         }
-        
         if(input.isKeyPressed(Input.KEY_RETURN)) {
             if((bArrowX == 440) && (bArrowY == 523)) {
-                if ((turn == 1) || (turn == 2)) {
-                    damage = 10;
-                    enemyHP = attack(enemyHP, damage, enemyID);
-                    battleQueue.remove();
-                    battleQueue.offer(turn);
+                if (turn == 1) {
+                    miroMove();
+                    attackPhase();
+//                    miroReposition();
+                    System.out.println("  enemy hp: " + enemyHP + "\n");
+                }
+                if (turn == 2) {
+                    attackPhase();
+                    System.out.println("  enemy hp: " + enemyHP + "\n");
                 }
             }
             if((bArrowX == 440) && (bArrowY == 580)) {
@@ -307,24 +309,49 @@ public class Battle extends BasicGameState {
         battleQueue.offer(3);
     }
     
-    public int attack(int eHP, int damage, int enemyID) {
-        if (enemyID == 0) {
-            eHP -= 10;
+    public void attackPhase() {
+        damage = 10;
+        enemyHP = attack(enemyHP, damage, enemyID);
+        battleQueue.remove();
+        battleQueue.offer(turn);
+    }
+    private void miroMove() {
+        for(int b = 0; b < 5; b ++) {
+            miroX += 15;
+            miroBat = miroAttacking;
         }
-        if (enemyID == 1) {
-            eHP -= 10;
+    }
+    
+    private void miroReposition() {
+        for(int b = 0; b < 5; b ++) {
+            miroX -= 15;
+            miroBat = miroMoving;
         }
-        if (enemyID == 2) {
-            eHP -= 10;
-        }
+    }
         
+    public int attack(int eHP, int damage, int enemyID) {
+        double yn = Math.random();
+        if (yn < .69) {
+            if (enemyID == 0) {
+                eHP -= 10;
+            }
+            if (enemyID == 1) {
+                eHP -= 10;
+            }
+            if (enemyID == 2) {
+                eHP -= 10;
+            }
+        }
+        else {
+            System.out.print("You missed!");
+        }
         return eHP;
     }
     
     public void enemyAttack() {
         double yn = Math.random();
         double enBat = Math.random();
-        if (yn < .7) {   
+        if (yn < .76) {   
             if(enBat > .5) {
                 mHP -= 10;
                 if (mHP < 0) {
