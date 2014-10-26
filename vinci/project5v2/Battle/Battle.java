@@ -57,7 +57,7 @@ public class Battle extends BasicGameState {
     public Image[] hp = new Image[11];
     public Image[] mp = new Image[11];
     Queue<Integer> battleQueue;
-    public int turn, enemyHP = 100, enemypHP, damage, enemyBat, mHP = 50, jHP = 50, miroX = 100;
+    public int turn, enemyHP, enemypHP, damage, enemyBat, mHP = 50, jHP = 50, miroX = 100;
     
     public Battle(int state) {
     }
@@ -68,6 +68,21 @@ public class Battle extends BasicGameState {
     }
     @Override
     public void init(GameContainer gc, StateBasedGame sbg) throws SlickException {
+               
+    }
+    
+    @Override
+    public void enter(GameContainer gc, StateBasedGame sbg) throws SlickException {
+        enemyHP = 100;
+        
+        try {
+            battleSound = AudioLoader.getAudio("WAV", ResourceLoader.getResourceAsStream("/res/battle.wav"));
+        } catch (IOException ex) {
+            Logger.getLogger(Battle.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        battleSound.playAsMusic(1.0f, 1.0f, true);
+        
         battleQueue = new LinkedList<>();
         
         enemyID = (int)(Math.random() * ((3) + 1));
@@ -104,20 +119,6 @@ public class Battle extends BasicGameState {
         miroAttacking = new Animation(miroAtk, durationBattle, true);
         miroBat = miroMoving;
         jacquesBat = jacquesMoving;
-        
-        
-    }
-    
-    @Override
-    public void enter(GameContainer gc, StateBasedGame sbg) throws SlickException {
-        
-        try {
-            battleSound = AudioLoader.getAudio("WAV", ResourceLoader.getResourceAsStream("/res/battle.wav"));
-        } catch (IOException ex) {
-            Logger.getLogger(Battle.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        
-        battleSound.playAsMusic(1.0f, 1.0f, true);
     }
     
     @Override
@@ -191,12 +192,12 @@ public class Battle extends BasicGameState {
             if((bArrowX == 440) && (bArrowY == 523)) {
                 if (turn == 1) {
                     miroMove();
-                    attackPhase();
-//                    miroReposition();
+                    attackPhase(sbg);
+                    miroReposition();
                     System.out.println("  enemy hp: " + enemyHP + "\n");
                 }
                 if (turn == 2) {
-                    attackPhase();
+                    attackPhase(sbg);
                     System.out.println("  enemy hp: " + enemyHP + "\n");
                 }
             }
@@ -309,27 +310,27 @@ public class Battle extends BasicGameState {
         battleQueue.offer(3);
     }
     
-    public void attackPhase() {
+    public void attackPhase(StateBasedGame sbg) {
         damage = 10;
-        enemyHP = attack(enemyHP, damage, enemyID);
+        enemyHP = attack(enemyHP, damage, enemyID, sbg);
         battleQueue.remove();
         battleQueue.offer(turn);
     }
     private void miroMove() {
-        for(int b = 0; b < 5; b ++) {
+        for(int b = 0; b < 5; b++) {
             miroX += 15;
             miroBat = miroAttacking;
         }
     }
     
     private void miroReposition() {
-        for(int b = 0; b < 5; b ++) {
+        for(int n = 0; n < 5; n++) {
             miroX -= 15;
             miroBat = miroMoving;
         }
     }
         
-    public int attack(int eHP, int damage, int enemyID) {
+    public int attack(int eHP, int damage, int enemyID, StateBasedGame sbg) {
         double yn = Math.random();
         if (yn < .69) {
             if (enemyID == 0) {
@@ -340,6 +341,9 @@ public class Battle extends BasicGameState {
             }
             if (enemyID == 2) {
                 eHP -= 10;
+            }
+            if (eHP <= 0) {
+                sbg.enterState(Game.stateStack.pop());
             }
         }
         else {
