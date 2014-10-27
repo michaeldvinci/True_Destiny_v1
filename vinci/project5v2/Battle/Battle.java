@@ -45,12 +45,12 @@ import vinci.project5v2.Game;
 public class Battle extends BasicGameState {
     
     public Animation bossMoving, boss, miroMoving, miroBat, jacquesMoving, jacquesBat, sephiroth, sephirothMoving, queenBee, queenBeeMoving, miroAttacking;
-    public Image battleMap, bossImg, sephirothIMG, queenBeeImg, battleArrow, miroAtk1, miroAtk2;
+    public Image battleMap, bossImg, sephirothIMG, queenBeeImg, battleArrow, miroAtk1, miroAtk2, missed;
     private Image mp0, mp10, mp20, mp30, mp40, mp50, mp60, mp70, mp80, mp90, mp100;
     private Image hp0, hp10, hp20, hp30, hp40, hp50, hp60, hp70, hp80, hp90, hp100;
     private final int[] duration = {300, 300, 300};
     private final int[] duration2 = {300, 600, 600};
-    private final int[] durationBattle = {400, 400, 400};
+    private final int[] durationBattle = {200, 200, 200, 200, 200, 200, 200, 200, 200, 200};
     public Graphics g = new Graphics();
     private Audio battleSound;
     private int enemyID, bArrowX = 440, bArrowY = 523;
@@ -111,13 +111,14 @@ public class Battle extends BasicGameState {
         
         battleMap = new Image("/res/grassBattle.png");
         battleArrow = new Image("/res/battleArrow.png");
+        missed = new Image("/res/Missed.png");
         Image[] jacquesMove = {new Image("/res/jacques.png"), new Image("/res/jacques2.png"), new Image("/res/jacques3.png")};
         Image[] miroMove = {new Image("/res/battle1.png"), new Image("/res/battle2.png"), new Image("/res/battle1.png")};
-        Image[] miroAtk = {new Image("/res/mAttack1.png"), new Image("/res/mAttack2.png"), new Image("/res/mAttack1.png")};
+        Image[] miroAtk = {new Image("/res/mAttack1.png"), new Image("/res/mAttack2.png"), new Image("/res/mAttack3.png"), new Image("/res/mAttack4.png"), new Image("/res/mAttack5.png"), new Image("/res/mAttack6.png"), new Image("/res/mAttack4.png"), new Image("/res/mAttack3.png"), new Image("/res/mAttack2.png"), new Image("/res/mAttack1.png")};
         miroMoving = new Animation(miroMove, duration, true);
         jacquesMoving = new Animation(jacquesMove, duration, true);
         miroAttacking = new Animation(miroAtk, durationBattle, true);
-        miroBat = miroMoving;
+        miroBat = miroAttacking;
         jacquesBat = jacquesMoving;
     }
     
@@ -191,12 +192,12 @@ public class Battle extends BasicGameState {
         if(input.isKeyPressed(Input.KEY_RETURN)) {
             if((bArrowX == 440) && (bArrowY == 523)) {
                 if (turn == 1) {
-                    miroMove();
+                    miroBat = miroMoving;
                     attackPhase(sbg);
-                    miroReposition();
                     System.out.println("  enemy hp: " + enemyHP + "\n");
                 }
                 if (turn == 2) {
+                    miroBat = miroMoving;
                     attackPhase(sbg);
                     System.out.println("  enemy hp: " + enemyHP + "\n");
                 }
@@ -208,9 +209,13 @@ public class Battle extends BasicGameState {
                 
             }
             if((bArrowX == 635) && (bArrowY == 580)) {
-                int runAway = (int)(Math.random() * ((3) + 1));
-                if (runAway == 3) {
-                    sbg.enterState(Game.stateStack.pop());
+                 if ((turn == 1) || (turn == 2)){
+                    int runAway = (int)(Math.random() * ((3) + 1));
+                    if (runAway == 3) {
+                        sbg.enterState(Game.stateStack.pop());
+                    }
+                    battleQueue.remove();
+                    battleQueue.offer(turn);
                 }
             }
         }
@@ -316,19 +321,6 @@ public class Battle extends BasicGameState {
         battleQueue.remove();
         battleQueue.offer(turn);
     }
-    private void miroMove() {
-        for(int b = 0; b < 5; b++) {
-            miroX += 15;
-            miroBat = miroAttacking;
-        }
-    }
-    
-    private void miroReposition() {
-        for(int n = 0; n < 5; n++) {
-            miroX -= 15;
-            miroBat = miroMoving;
-        }
-    }
         
     public int attack(int eHP, int damage, int enemyID, StateBasedGame sbg) {
         double yn = Math.random();
@@ -348,6 +340,7 @@ public class Battle extends BasicGameState {
         }
         else {
             System.out.print("You missed!");
+            g.drawImage(missed, 500, 140);
         }
         return eHP;
     }
