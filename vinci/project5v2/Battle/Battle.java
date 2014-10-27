@@ -44,35 +44,68 @@ import vinci.project5v2.Game;
  */
 public class Battle extends BasicGameState {
     
-    public Animation bossMoving, boss, miroMoving, miroBat, jacquesMoving, jacquesBat, sephiroth, sephirothMoving, queenBee, queenBeeMoving, miroAttacking;
-    public Image battleMap, bossImg, sephirothIMG, queenBeeImg, battleArrow, miroAtk1, miroAtk2, missed;
+    public Animation bossMoving, boss, miroMoving, miroBat, jacquesMoving, jacquesBat, sephiroth, sephirothMoving, queenBee, queenBeeMoving, miroAttacking, jacquesAttacking, fireAtk;
+    public Image battleMap, bossImg, sephirothIMG, queenBeeImg, battleArrow, miroAtk, jacquesAtk, missed, mMenu, mMenu2, bMenu1, bMenu2;
     private Image mp0, mp10, mp20, mp30, mp40, mp50, mp60, mp70, mp80, mp90, mp100;
     private Image hp0, hp10, hp20, hp30, hp40, hp50, hp60, hp70, hp80, hp90, hp100;
     private final int[] duration = {300, 300, 300};
     private final int[] duration2 = {300, 600, 600};
+    private final int[] magicDuration = {300, 300, 300, 300};
     private final int[] durationBattle = {200, 200, 200, 200, 200, 200, 200, 200, 200, 200};
     public Graphics g = new Graphics();
     private Audio battleSound;
     private int enemyID, bArrowX = 440, bArrowY = 523;
     public Image[] hp = new Image[11];
     public Image[] mp = new Image[11];
-    Queue<Integer> battleQueue;
+    public Queue<Integer> battleQueue;
     public int turn, enemyHP, enemypHP, damage, enemyBat, mHP = 50, jHP = 50, miroX = 100;
+    private String menu, magic, items;
+    private Graphics gs;
+    private boolean battleMenu, itemMenu, magicMenu;
     
+    /**
+     *
+     * @param state
+     */
     public Battle(int state) {
     }
 
+    /**
+     *
+     * @return
+     */
     @Override
     public int getID() {
         return 3;
     }
+
+    /**
+     *
+     * @param gc
+     * @param sbg
+     * @throws SlickException
+     */
     @Override
     public void init(GameContainer gc, StateBasedGame sbg) throws SlickException {
-               
+    
+        battleQueue = new LinkedList<>();
+        
     }
     
+    /**
+     *
+     * @param gc
+     * @param sbg
+     * @throws SlickException
+     */
     @Override
     public void enter(GameContainer gc, StateBasedGame sbg) throws SlickException {
+        initQueue();
+               
+        battleMenu = true;
+        magicMenu = false;
+        itemMenu = false;
+        
         enemyHP = 100;
         
         try {
@@ -82,9 +115,7 @@ public class Battle extends BasicGameState {
         }
         
         battleSound.playAsMusic(1.0f, 1.0f, true);
-        
-        battleQueue = new LinkedList<>();
-        
+                
         enemyID = (int)(Math.random() * ((3) + 1));
         
         initHP();
@@ -112,21 +143,31 @@ public class Battle extends BasicGameState {
         battleMap = new Image("/res/grassBattle.png");
         battleArrow = new Image("/res/battleArrow.png");
         missed = new Image("/res/Missed.png");
-        Image[] jacquesMove = {new Image("/res/jacques.png"), new Image("/res/jacques2.png"), new Image("/res/jacques3.png")};
-        Image[] miroMove = {new Image("/res/battle1.png"), new Image("/res/battle2.png"), new Image("/res/battle1.png")};
-        Image[] miroAtk = {new Image("/res/mAttack1.png"), new Image("/res/mAttack2.png"), new Image("/res/mAttack3.png"), new Image("/res/mAttack4.png"), new Image("/res/mAttack5.png"), new Image("/res/mAttack6.png"), new Image("/res/mAttack4.png"), new Image("/res/mAttack3.png"), new Image("/res/mAttack2.png"), new Image("/res/mAttack1.png")};
-        miroMoving = new Animation(miroMove, duration, true);
-        jacquesMoving = new Animation(jacquesMove, duration, true);
-        miroAttacking = new Animation(miroAtk, durationBattle, true);
+        
+        initImages();
+        
         miroBat = miroAttacking;
         jacquesBat = jacquesMoving;
     }
     
+    /**
+     *
+     * @param gc
+     * @param sbg
+     * @throws SlickException
+     */
     @Override
     public void leave(GameContainer gc, StateBasedGame sbg) throws SlickException {
         battleSound.stop();
     }
 
+    /**
+     *
+     * @param gc
+     * @param sbg
+     * @param grphcs
+     * @throws SlickException
+     */
     @Override
     public void render(GameContainer gc, StateBasedGame sbg, Graphics grphcs) throws SlickException {
         battleMap.draw(0, 0);
@@ -151,6 +192,13 @@ public class Battle extends BasicGameState {
         }
     }
 
+    /**
+     *
+     * @param gc
+     * @param sbg
+     * @param i
+     * @throws SlickException
+     */
     @Override
     public void update(GameContainer gc, StateBasedGame sbg, int i) throws SlickException {
         Input input = gc.getInput();
@@ -173,7 +221,7 @@ public class Battle extends BasicGameState {
         
         keyboardBattleInput(input);
         
-        initQueue();
+//        battleQueue.add(1);
         turn = battleQueue.element();
         
         if(input.isKeyPressed(Input.KEY_ESCAPE)) {
@@ -186,27 +234,37 @@ public class Battle extends BasicGameState {
             System.out.println("   miro hp: " + mHP);
             System.out.println("jacques hp: " + jHP + "\n");
             
+            jacquesBat = jacquesMoving;
+            miroBat = miroAttacking;
+            
             battleQueue.remove();
             battleQueue.offer(turn);
         }
         if(input.isKeyPressed(Input.KEY_RETURN)) {
             if((bArrowX == 440) && (bArrowY == 523)) {
-                if (turn == 1) {
-                    miroBat = miroMoving;
-                    attackPhase(sbg);
-                    System.out.println("  enemy hp: " + enemyHP + "\n");
+                if (battleMenu) {
+                    if (turn == 1) {
+                        miroBat = miroMoving;
+                        attackPhase(sbg);
+                        System.out.println("  enemy hp: " + enemyHP + "\n");
+                        jacquesBat = jacquesAttacking;
+                    }
+                    if (turn == 2) {
+                        attackPhase(sbg);
+                        System.out.println("  enemy hp: " + enemyHP + "\n");
+                        jacquesBat = jacquesMoving;
+                    }
                 }
-                if (turn == 2) {
-                    miroBat = miroMoving;
-                    attackPhase(sbg);
-                    System.out.println("  enemy hp: " + enemyHP + "\n");
+                if (magicMenu) {
+                    
                 }
             }
             if((bArrowX == 440) && (bArrowY == 580)) {
-                
+                magicMenu = true;
+                battleMenu = false;
             }
             if((bArrowX == 635) && (bArrowY == 523)) {
-                
+                menu = items;
             }
             if((bArrowX == 635) && (bArrowY == 580)) {
                  if ((turn == 1) || (turn == 2)){
@@ -219,11 +277,42 @@ public class Battle extends BasicGameState {
                 }
             }
         }
+        if(input.isKeyPressed(Input.KEY_SPACE)) {
+            if(magicMenu = true) {
+                magicMenu = false;
+                battleMenu = true;
+            }
+        }
+        
+        if(battleMenu) {
+            gs = battleMap.getGraphics();
+                
+            gs.drawImage(bMenu1, 470, 498);
+            gs.drawImage(bMenu2, 655, 515);
+            
+            gs.flush();
+        }
+        if(magicMenu) {
+            gs = battleMap.getGraphics();
+                
+            gs.drawImage(mMenu, 470, 498);
+            gs.drawImage(mMenu2, 655, 515);
+            
+            gs.flush();
+        }
+        if(itemMenu) {
+            
+        }
+        
         
         miroHP(mHP);
         jacquesHP(jHP);
     }
     
+    /**
+     *
+     * @param input
+     */
     public void keyboardBattleInput(Input input) {
         //  attack - 440, 523   635, 523 - items
         //   magic - 440, 580   635, 580 - escape
@@ -262,10 +351,18 @@ public class Battle extends BasicGameState {
         }
     }
     
+    /**
+     *
+     * @param input
+     */
     public void mouseBattleInput(Input input) {
         
     }
     
+    /**
+     *
+     * @throws SlickException
+     */
     public void initHP() throws SlickException {
         hp[0] = hp0 = new Image("/res/hp0.png");
         hp[1] = hp10 = new Image("/res/hp10.png");
@@ -280,6 +377,10 @@ public class Battle extends BasicGameState {
         hp[10] = hp100 = new Image("/res/hp100.png");
     }
     
+    /**
+     *
+     * @throws SlickException
+     */
     public void initMP() throws SlickException {
         mp[0] = mp0 = new Image("/res/mp0.png");
         mp[1] = mp10 =  new Image("/res/mp10.png");
@@ -294,6 +395,10 @@ public class Battle extends BasicGameState {
         mp[10] = mp100 =  new Image("/res/mp100.png");
     }
     
+    /**
+     *
+     * @param mHP
+     */
     public void miroHP(int mHP) {
 //        hp100.draw(140, 515);
         int mh = (mHP / 5);
@@ -301,6 +406,10 @@ public class Battle extends BasicGameState {
         mp100.draw(140, 530);
     }
     
+    /**
+     *
+     * @param jHP
+     */
     public void jacquesHP(int jHP) {
 //        hp80.draw(140, 552);
         int jh = (jHP / 5);
@@ -309,12 +418,19 @@ public class Battle extends BasicGameState {
         mp100.draw(140, 567);
     }
     
+    /**
+     *
+     */
     public void initQueue() {
-        battleQueue.offer(1);
-        battleQueue.offer(2);
-        battleQueue.offer(3);
+        battleQueue.add(1);
+        battleQueue.add(2);
+        battleQueue.add(3);
     }
     
+    /**
+     *
+     * @param sbg
+     */
     public void attackPhase(StateBasedGame sbg) {
         damage = 10;
         enemyHP = attack(enemyHP, damage, enemyID, sbg);
@@ -322,6 +438,14 @@ public class Battle extends BasicGameState {
         battleQueue.offer(turn);
     }
         
+    /**
+     *
+     * @param eHP
+     * @param damage
+     * @param enemyID
+     * @param sbg
+     * @return
+     */
     public int attack(int eHP, int damage, int enemyID, StateBasedGame sbg) {
         double yn = Math.random();
         if (yn < .69) {
@@ -340,11 +464,14 @@ public class Battle extends BasicGameState {
         }
         else {
             System.out.print("You missed!");
-            g.drawImage(missed, 500, 140);
+            missed.draw(500, 140);
         }
         return eHP;
     }
     
+    /**
+     *
+     */
     public void enemyAttack() {
         double yn = Math.random();
         double enBat = Math.random();
@@ -364,5 +491,28 @@ public class Battle extends BasicGameState {
         else {
             System.out.println("MISSED!");
         }
+    }
+    
+    /**
+     *
+     * @throws SlickException
+     */
+    public void initImages() throws SlickException {
+        Image[] jacquesMove = {new Image("/res/jacques.png"), new Image("/res/jacques2.png"), new Image("/res/jacques3.png")};
+        Image[] miroMove = {new Image("/res/battle1.png"), new Image("/res/battle2.png"), new Image("/res/battle1.png")};
+        Image[] miroAtk = {new Image("/res/mAttack1.png"), new Image("/res/mAttack2.png"), new Image("/res/mAttack3.png"), new Image("/res/mAttack4.png"), new Image("/res/mAttack5.png"), new Image("/res/mAttack6.png"), new Image("/res/mAttack4.png"), new Image("/res/mAttack3.png"), new Image("/res/mAttack2.png"), new Image("/res/mAttack1.png")};
+        Image[] jacquesAtk = {new Image("/res/jBattle1.png"), new Image("/res/jBattle2.png"), new Image("/res/jBattle3.png"), new Image("/res/jBattle4.png"), new Image("/res/jBattle5.png"), new Image("/res/jBattle6.png"), new Image("/res/jBattle4.png"), new Image("/res/jBattle3.png"), new Image("/res/jBattle2.png"), new Image("/res/jBattle1.png")};
+        Image[] fireImg = {new Image("/res/fire1.png"), new Image("/res/fire2.png"), new Image("/res/fire3.png"), new Image("/res/fire4.png")};
+        
+        mMenu = new Image("/res/magicMenu1.png");
+        mMenu2 = new Image("/res/magicMenu2.png");
+        bMenu1 = new Image("/res/battleMenu1.png");
+        bMenu2 = new Image("/res/battleMenu2.png");
+        
+        miroMoving = new Animation(miroMove, duration, true);
+        jacquesMoving = new Animation(jacquesMove, duration, true);
+        miroAttacking = new Animation(miroAtk, durationBattle, true);
+        jacquesAttacking = new Animation(jacquesAtk, durationBattle, true);
+        fireAtk = new Animation(fireImg, magicDuration, false);
     }
 }
