@@ -24,6 +24,7 @@
 
 package vinci.project5v2;
 
+import Characters.Miro;
 import vinci.project5v2.Battle.*;
 import java.util.Stack;
 import org.newdawn.slick.*;
@@ -43,6 +44,7 @@ public class Game extends StateBasedGame {
     public static final int battleAction  = 7;
     public static final int battleMagic = 8;
     public static final int battleItem = 9;
+    public static Miro m;
     
 
     public Game(String gameName) {
@@ -57,6 +59,7 @@ public class Game extends StateBasedGame {
         this.addState(new BattleAction(battleAction));
         this.addState(new BattleItem(battleItem));
         this.addState(new BattleMagic(battleMagic));
+        m = new Miro(50, 50, 6, 5, 7, 4);
     }
 
     @Override
@@ -67,13 +70,16 @@ public class Game extends StateBasedGame {
         this.getState(battle).init(gc, this);
         this.getState(gameMenu).init(gc, this);
         this.enterState(menu);
+//        this.enterState(battle);
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args)throws Exception{
         AppGameContainer appGC;
         try {
             appGC = new AppGameContainer(new Game(gameName));
+//            appGC.setFullscreen(true);
             appGC.setDisplayMode(800, 640, false);
+            appGC.setShowFPS(false);
             appGC.start();
         }
         catch(SlickException e) {

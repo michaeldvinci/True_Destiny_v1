@@ -32,6 +32,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.lwjgl.input.Mouse;
+import org.lwjgl.util.*;
 import org.newdawn.slick.*;
 import org.newdawn.slick.state.*;
 import org.newdawn.slick.openal.*;
@@ -44,7 +45,7 @@ import vinci.project5v2.Game;
  */
 public class Battle extends BasicGameState {
     
-    public Animation bossMoving, boss, miroMoving, miroBat, jacquesMoving, jacquesBat, sephiroth, sephirothMoving, queenBee, queenBeeMoving, miroAttacking, jacquesAttacking, fireAtk;
+    public Animation bossMoving, boss, miroMoving, miroBat, jacquesMoving, jacquesBat, sephiroth, sephirothMoving, queenBee, queenBeeMoving, miroAttacking, jacquesAttacking, magicPH, fireAtk, magicLocat;
     public Image battleMap, bossImg, sephirothIMG, queenBeeImg, battleArrow, miroAtk, jacquesAtk, missed, mMenu, mMenu2, bMenu1, bMenu2;
     private Image mp0, mp10, mp20, mp30, mp40, mp50, mp60, mp70, mp80, mp90, mp100;
     private Image hp0, hp10, hp20, hp30, hp40, hp50, hp60, hp70, hp80, hp90, hp100;
@@ -60,8 +61,9 @@ public class Battle extends BasicGameState {
     public Queue<Integer> battleQueue;
     public int turn, enemyHP, enemypHP, damage, enemyBat, mHP = 50, jHP = 50, miroX = 100;
     private String menu, magic, items;
-    private Graphics gs;
+    private Graphics gs, ga;
     private boolean battleMenu, itemMenu, magicMenu;
+    Timer timer;
     
     /**
      *
@@ -89,6 +91,8 @@ public class Battle extends BasicGameState {
     public void init(GameContainer gc, StateBasedGame sbg) throws SlickException {
     
         battleQueue = new LinkedList<>();
+        timer = new Timer();
+        timer.set(4);
         
     }
     
@@ -180,12 +184,15 @@ public class Battle extends BasicGameState {
         
         if (enemyID == 0) {
             boss.draw(500, 200);
+            magicLocat.draw(600, 310);
         }
         if (enemyID == 1) {
             queenBee.draw(500, 200);
+            magicLocat.draw(550, 250);
         }
         if (enemyID == 2) {
             sephiroth.draw(500, 200);
+            magicLocat.draw(550, 250);
         }
         if (enemyID == 3) {
             
@@ -228,7 +235,7 @@ public class Battle extends BasicGameState {
             System.exit(0);
         }
         
-        if (turn == 3) {
+        if(turn == 3) {
             enemyAttack();
             
             System.out.println("   miro hp: " + mHP);
@@ -241,22 +248,41 @@ public class Battle extends BasicGameState {
             battleQueue.offer(turn);
         }
         if(input.isKeyPressed(Input.KEY_RETURN)) {
+            timer.reset();
             if((bArrowX == 440) && (bArrowY == 523)) {
                 if (battleMenu) {
                     if (turn == 1) {
-                        miroBat = miroMoving;
+                        resetMagic();
                         attackPhase(sbg);
                         System.out.println("  enemy hp: " + enemyHP + "\n");
+                        miroBat = miroMoving;
                         jacquesBat = jacquesAttacking;
                     }
                     if (turn == 2) {
+                        resetMagic();
                         attackPhase(sbg);
+                        resetMagic();
                         System.out.println("  enemy hp: " + enemyHP + "\n");
                         jacquesBat = jacquesMoving;
                     }
                 }
                 if (magicMenu) {
-                    
+                    if((bArrowX == 440) && (bArrowY == 523)) {
+                        if (turn == 1) {
+                            magicLocat = fireAtk;
+                            battleQueue.remove();
+                            battleQueue.offer(turn);
+                            miroBat = miroMoving;
+                            jacquesBat = jacquesAttacking;
+                        }
+                        if (turn == 2) {
+                            resetMagic();
+                            magicLocat = fireAtk;
+                            battleQueue.remove();
+                            battleQueue.offer(turn);
+                            jacquesBat = jacquesMoving;
+                        }
+                    }
                 }
             }
             if((bArrowX == 440) && (bArrowY == 580)) {
@@ -303,7 +329,6 @@ public class Battle extends BasicGameState {
         if(itemMenu) {
             
         }
-        
         
         miroHP(mHP);
         jacquesHP(jHP);
@@ -503,6 +528,7 @@ public class Battle extends BasicGameState {
         Image[] miroAtk = {new Image("/res/mAttack1.png"), new Image("/res/mAttack2.png"), new Image("/res/mAttack3.png"), new Image("/res/mAttack4.png"), new Image("/res/mAttack5.png"), new Image("/res/mAttack6.png"), new Image("/res/mAttack4.png"), new Image("/res/mAttack3.png"), new Image("/res/mAttack2.png"), new Image("/res/mAttack1.png")};
         Image[] jacquesAtk = {new Image("/res/jBattle1.png"), new Image("/res/jBattle2.png"), new Image("/res/jBattle3.png"), new Image("/res/jBattle4.png"), new Image("/res/jBattle5.png"), new Image("/res/jBattle6.png"), new Image("/res/jBattle4.png"), new Image("/res/jBattle3.png"), new Image("/res/jBattle2.png"), new Image("/res/jBattle1.png")};
         Image[] fireImg = {new Image("/res/fire1.png"), new Image("/res/fire2.png"), new Image("/res/fire3.png"), new Image("/res/fire4.png")};
+        Image[] magicBlank = {new Image("/res/magic0.png"), new Image("/res/magic0.png"), new Image("/res/magic0.png"), new Image("/res/magic0.png")};
         
         mMenu = new Image("/res/magicMenu1.png");
         mMenu2 = new Image("/res/magicMenu2.png");
@@ -513,6 +539,13 @@ public class Battle extends BasicGameState {
         jacquesMoving = new Animation(jacquesMove, duration, true);
         miroAttacking = new Animation(miroAtk, durationBattle, true);
         jacquesAttacking = new Animation(jacquesAtk, durationBattle, true);
-        fireAtk = new Animation(fireImg, magicDuration, false);
+        fireAtk = new Animation(fireImg, magicDuration, true);
+        magicPH = new Animation(magicBlank, magicDuration, true);
+        
+        magicLocat = magicPH;
+    }
+    
+    public void resetMagic() {
+        magicLocat = magicPH;
     }
 }
